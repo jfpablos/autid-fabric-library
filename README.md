@@ -79,6 +79,44 @@ except Exception as e:
 | `parameters` | dict | Parámetros del notebook serializados como JSON (opcional) |
 | `extra_metadata` | dict | Metadatos adicionales serializados como JSON (opcional) |
 
+### Tabla de auditoría
+
+**Nombre y ubicación por defecto**
+
+`audit_lakehouse.notebook_audit_log` — configurable con el parámetro `audit_table`.
+
+**Comportamiento de creación**
+
+- Si la tabla **no existe**: se crea automáticamente en formato Delta, particionada por `log_date`.
+- Si la tabla **ya existe**: se hace un `MERGE` sobre `execution_id`, de forma que cada llamada a `start()`, `finish_success()` o `finish_failure()` actualiza la misma fila sin duplicarla.
+
+**Esquema de columnas**
+
+| Columna | Tipo | Nulable | Descripción |
+|---|---|---|---|
+| `execution_id` | STRING | NO | UUID único por ejecución del notebook |
+| `correlation_id` | STRING | sí | ID para agrupar notebooks de un mismo pipeline |
+| `pipeline_run_id` | STRING | sí | Run ID del pipeline de Fabric (extraído de `notebookutils`) |
+| `notebook_name` | STRING | NO | Nombre del notebook en ejecución |
+| `layer` | STRING | sí | Capa de datos: bronze / silver / gold |
+| `operation` | STRING | sí | Nombre descriptivo de la operación |
+| `source_table` | STRING | sí | Tabla de origen |
+| `target_table` | STRING | sí | Tabla de destino |
+| `environment` | STRING | sí | Entorno: dev / uat / prod |
+| `workspace_name` | STRING | sí | Nombre del workspace de Fabric |
+| `start_time` | TIMESTAMP | sí | Momento de inicio (UTC) |
+| `end_time` | TIMESTAMP | sí | Momento de fin (UTC) |
+| `duration_seconds` | LONG | sí | Duración total en segundos |
+| `rows_read` | LONG | sí | Filas leídas (informado con `set_rows_read()`) |
+| `rows_written` | LONG | sí | Filas escritas (informado con `set_rows_written()`) |
+| `status` | STRING | NO | Estado: `RUNNING` / `SUCCESS` / `FAILED` |
+| `error_message` | STRING | sí | Mensaje de excepción (máx. 2 000 caracteres) |
+| `stack_trace` | STRING | sí | Stack trace completo (máx. 5 000 caracteres) |
+| `attempt_number` | INTEGER | sí | Número de intento del pipeline |
+| `parameters` | STRING | sí | Parámetros del notebook en JSON |
+| `extra_metadata` | STRING | sí | Metadatos adicionales en JSON |
+| `log_date` | DATE | NO | Fecha UTC del log — **columna de partición** |
+
 ## Actualización de versión
 
 Para publicar una nueva versión:
